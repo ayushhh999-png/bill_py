@@ -42,9 +42,8 @@ def calculate_rate(company, product, sp, origin=None):
     elif company == "lomus":
         return sp / 1.70
     else:
-        # ANY company not listed above
         if origin is None:
-            origin = "Nepali"  # default if somehow not selected
+            origin = "Nepali"
         if origin.lower() == "nepali":
             return sp / 1.25
         else:
@@ -76,6 +75,14 @@ def read_records(month=None):
             next(reader, None)
             records = list(reader)
     return records
+
+def write_records(records, month=None):
+    """Overwrite CSV file with updated records"""
+    filename = get_csv_file(month)
+    with open(filename, "w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["Date", "Medicine", "Company", "Qty", "SP", "Rate", "Total", "Verified By", "Billed By"])
+        writer.writerows(records)
 
 def get_all_months():
     files = [f for f in os.listdir() if f.startswith("records_") and f.endswith(".csv")]
@@ -156,6 +163,7 @@ html = """
                             <th>Total</th>
                             <th>Verified</th>
                             <th>Billed</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -170,10 +178,17 @@ html = """
                             <td>{{ r[6] }}</td>
                             <td>{{ r[7] }}</td>
                             <td>{{ r[8] }}</td>
+                            <td>
+                                <form method="POST" action="/delete_single" style="display:inline-block;">
+                                    <input type="hidden" name="row_index" value="{{ loop.index0 }}">
+                                    <input type="password" name="password" class="form-control form-control-sm mb-1" placeholder="Password">
+                                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                </form>
+                            </td>
                         </tr>
                         {% endfor %}
                         {% if records|length == 0 %}
-                        <tr><td colspan="9" class="text-center text-muted">No records found</td></tr>
+                        <tr><td colspan="10" class="text-center text-muted">No records found</td></tr>
                         {% endif %}
                     </tbody>
                 </table>
@@ -181,9 +196,9 @@ html = """
         </div>
     </div>
 
-    <!-- Delete Records -->
+    <!-- Delete All Records -->
     <form method="POST" action="/delete" class="mt-4">
-        <input type="password" name="password" class="form-control w-25 d-inline-block" placeholder="Enter password to delete">
+        <input type="password" name="password" class="form-control w-25 d-inline-block" placeholder="Enter password to delete all">
         <button type="submit" class="btn btn-danger">Delete All Records</button>
     </form>
 
@@ -231,6 +246,24 @@ def delete_records():
         flash("All records deleted successfully!", "danger")
     else:
         flash("Incorrect password!", "danger")
+    return redirect(url_for("billing"))
+
+@app.route("/delete_single", methods=["POST"])
+def delete_single():
+    password = request.form["password"]
+    if password != "Lamine@10":
+        flash("Incorrect password!", "danger")
+        return redirect(url_for("billing"))
+
+    row_index = int(request.form["row_index"])
+    current_month = datetime.now().strftime("%B_%Y")
+    records = read_records(current_month)
+    if 0 <= row_index < len(records):
+        del records[row_index]
+        write_records(records, current_month)
+        flash("Record deleted successfully!", "success")
+    else:
+        flash("Record not found!", "danger")
     return redirect(url_for("billing"))
 
 # -----------------------
