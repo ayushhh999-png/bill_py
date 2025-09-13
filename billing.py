@@ -39,8 +39,6 @@ def calculate_rate(company, product, sp, origin=None):
         return sp / 1.21
     elif company == "bhaskar":
         return sp / 1.31
-    elif comapny == "omnica":
-        return sp/ 1.23
     elif company == "lomus":
         return sp / 1.70
     else:
