@@ -11,7 +11,7 @@ app.secret_key = "supersecretkey"
 # -----------------------
 sun_special_products = [
     "admenta", "donamem", "lithosun", "zeptol cr", "zeptol",
-    "delsia", "irovel", "octridE", "prazopress xl", "prolomet xl"
+    "delsia", "irovel", "octridE", "prazopress xl", "prolomet xl", "sompraz"
 ]
 
 intas_special_products = [
@@ -42,9 +42,8 @@ def calculate_rate(company, product, sp, origin=None):
     elif company == "lomus":
         return sp / 1.70
     else:
-        # ANY company not listed above
         if origin is None:
-            origin = "Nepali"  # default if somehow not selected
+            origin = "Nepali"
         if origin.lower() == "nepali":
             return sp / 1.25
         else:
@@ -64,7 +63,8 @@ def save_record(data, month=None):
     with open(filename, "a", newline="") as f:
         writer = csv.writer(f)
         if not file_exists:
-            writer.writerow(["Date", "Medicine", "Company", "Qty", "SP", "Rate", "Total", "Verified By", "Billed By", "Invoice No"])
+            writer.writerow(["Date", "Medicine", "Company", "Qty", "SP", "Rate", "Total",
+                             "Verified By", "Billed By", "Invoice No"])
         writer.writerow(data)
 
 def read_records(month=None):
@@ -74,7 +74,11 @@ def read_records(month=None):
         with open(filename, newline="") as f:
             reader = csv.reader(f)
             next(reader, None)
-            records = list(reader)
+            for row in reader:
+                # Ensure row has 10 columns
+                while len(row) < 10:
+                    row.append("")
+                records.append(row)
     return records
 
 def get_all_months():
@@ -232,4 +236,14 @@ def delete_records():
         for f in os.listdir():
             if f.startswith("records_") and f.endswith(".csv"):
                 os.remove(f)
-        flash("All
+        flash("All records deleted successfully!", "danger")
+    else:
+        flash("Incorrect password!", "danger")
+    return redirect(url_for("billing"))
+
+# -----------------------
+# HOST/PORT for Render
+# -----------------------
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
