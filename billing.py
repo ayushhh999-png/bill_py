@@ -11,7 +11,7 @@ app.secret_key = "supersecretkey"
 # -----------------------
 sun_special_products = [
     "admenta", "donamem", "lithosun", "zeptol cr", "zeptol",
-    "delsia", "irovel", "octridE", "prazopress xl", "prolomet xl", "sompraz"
+    "delsia", "irovel", "octridE", "prazopress xl", "prolomet xl"
 ]
 
 intas_special_products = [
@@ -41,13 +41,14 @@ def calculate_rate(company, product, sp, origin=None):
         return sp / 1.31
     elif company == "lomus":
         return sp / 1.70
-    elif company == "other":
-        if origin == "Nepali":
+    else:
+        # ANY company not listed above
+        if origin is None:
+            origin = "Nepali"  # default if somehow not selected
+        if origin.lower() == "nepali":
             return sp / 1.25
         else:
             return sp / 1.19
-    else:
-        return sp
 
 # -----------------------
 # STORAGE
