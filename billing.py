@@ -64,7 +64,7 @@ def save_record(data, month=None):
     with open(filename, "a", newline="") as f:
         writer = csv.writer(f)
         if not file_exists:
-            writer.writerow(["Date", "Medicine", "Company", "Qty", "SP", "Rate", "Total", "Verified By", "Billed By"])
+            writer.writerow(["Date", "Medicine", "Company", "Qty", "SP", "Rate", "Total", "Verified By", "Billed By", "Invoice No"])
         writer.writerow(data)
 
 def read_records(month=None):
@@ -101,12 +101,13 @@ html = """
     <div class="card shadow-sm mb-4">
         <div class="card-body">
             <form method="POST" class="row g-3">
-                <div class="col-md-4"><input type="text" name="medicine" class="form-control" placeholder="Medicine Name" required></div>
+                <div class="col-md-3"><input type="text" name="medicine" class="form-control" placeholder="Medicine Name" required></div>
                 <div class="col-md-3"><input type="text" name="company" class="form-control" placeholder="Company" required></div>
                 <div class="col-md-2"><input type="number" name="qty" class="form-control" placeholder="Qty" required></div>
                 <div class="col-md-2"><input type="number" step="0.01" name="sp" class="form-control" placeholder="SP" required></div>
                 <div class="col-md-3"><input type="text" name="verified_by" class="form-control" placeholder="Verified By"></div>
                 <div class="col-md-3"><input type="text" name="billed_by" class="form-control" placeholder="Billed By"></div>
+                <div class="col-md-3"><input type="text" name="invoice_no" class="form-control" placeholder="Invoice No (if billed)"></div>
                 <div class="col-md-3">
                     <select name="origin" class="form-select">
                         <option value="Nepali">Nepali</option>
@@ -156,6 +157,7 @@ html = """
                             <th>Total</th>
                             <th>Verified</th>
                             <th>Billed</th>
+                            <th>Invoice No / Billing Status</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -170,10 +172,11 @@ html = """
                             <td>{{ r[6] }}</td>
                             <td>{{ r[7] }}</td>
                             <td>{{ r[8] }}</td>
+                            <td>{{ r[9] if r[9] else "Pending" }}</td>
                         </tr>
                         {% endfor %}
                         {% if records|length == 0 %}
-                        <tr><td colspan="9" class="text-center text-muted">No records found</td></tr>
+                        <tr><td colspan="10" class="text-center text-muted">No records found</td></tr>
                         {% endif %}
                     </tbody>
                 </table>
@@ -206,6 +209,7 @@ def billing():
         sp = float(request.form["sp"])
         verified_by = request.form["verified_by"]
         billed_by = request.form["billed_by"]
+        invoice_no = request.form.get("invoice_no", "")
         origin = request.form.get("origin", "Nepali")
 
         rate = calculate_rate(company, medicine, sp, origin)
@@ -213,7 +217,7 @@ def billing():
         rate = round(rate, 2)
         date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        save_record([date, medicine, company, qty, sp, rate, total, verified_by, billed_by])
+        save_record([date, medicine, company, qty, sp, rate, total, verified_by, billed_by, invoice_no])
         flash("Record saved successfully!", "success")
         return redirect(url_for("billing", month=current_month))
 
@@ -228,14 +232,4 @@ def delete_records():
         for f in os.listdir():
             if f.startswith("records_") and f.endswith(".csv"):
                 os.remove(f)
-        flash("All records deleted successfully!", "danger")
-    else:
-        flash("Incorrect password!", "danger")
-    return redirect(url_for("billing"))
-
-# -----------------------
-# HOST/PORT for Render
-# -----------------------
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+        flash("All
