@@ -41,13 +41,14 @@ def calculate_rate(company, product, sp, origin=None):
         return sp / 1.31
     elif company == "lomus":
         return sp / 1.70
-    elif company == "other":
-        if origin == "Nepali":
+    else:
+        # ANY company not listed above
+        if origin is None:
+            origin = "Nepali"  # default if somehow not selected
+        if origin.lower() == "nepali":
             return sp / 1.25
         else:
             return sp / 1.19
-    else:
-        return sp
 
 # -----------------------
 # STORAGE
@@ -232,5 +233,9 @@ def delete_records():
         flash("Incorrect password!", "danger")
     return redirect(url_for("billing"))
 
+# -----------------------
+# HOST/PORT for Render
+# -----------------------
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
